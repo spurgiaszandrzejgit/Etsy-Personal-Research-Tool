@@ -1,0 +1,9 @@
+﻿<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/EtsyAnalyzer.Core/EtsyAnalyzer.Core.csproj" />
+    <Project Path="src/EtsyAnalyzer.Analytics/EtsyAnalyzer.Analytics.csproj" />
+    <Project Path="src/EtsyAnalyzer.EtsyApi/EtsyAnalyzer.EtsyApi.csproj" />
+    <Project Path="src/EtsyAnalyzer.Infrastructure/EtsyAnalyzer.Infrastructure.csproj" />
+    <Project Path="src/EtsyAnalyzer.ConsoleApp/EtsyAnalyzer.ConsoleApp.csproj" />
+  </Folder>
+</Solution>
