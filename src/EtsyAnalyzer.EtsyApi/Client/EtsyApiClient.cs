@@ -123,6 +123,8 @@ public class EtsyApiClient
     {
         try
         {
+            Console.WriteLine($"[EtsyApiClient] Fetching trending queries (limit: {limit})...");
+
             // Базовые популярные категории Etsy для получения трендовых запросов
             var popularCategories = new List<string>
             {
@@ -137,7 +139,16 @@ public class EtsyApiClient
             {
                 try
                 {
+                    Console.WriteLine($"[EtsyApiClient] Searching category: {category}...");
                     var response = await SearchListingsAsync(category, 20, cancellationToken);
+
+                    if (response?.Results == null || response.Results.Count == 0)
+                    {
+                        Console.WriteLine($"[EtsyApiClient] No results for category: {category}");
+                        continue;
+                    }
+
+                    Console.WriteLine($"[EtsyApiClient] Found {response.Results.Count} listings in {category}");
 
                     // Извлекаем популярные теги из листингов
                     var tags = response.Results
@@ -148,22 +159,31 @@ public class EtsyApiClient
                         .Select(g => g.Key)
                         .Where(t => t.Length > 3 && !trendingQueries.Contains(t));
 
-                    trendingQueries.AddRange(tags);
+                    var newTags = tags.ToList();
+                    Console.WriteLine($"[EtsyApiClient] Extracted {newTags.Count} popular tags from {category}");
+                    trendingQueries.AddRange(newTags);
 
                     if (trendingQueries.Count >= limit)
+                    {
+                        Console.WriteLine($"[EtsyApiClient] Reached limit of {limit} keywords");
                         break;
+                    }
                 }
-                catch
+                catch (Exception ex)
                 {
                     // Пропускаем ошибки для отдельных категорий
+                    Console.WriteLine($"[EtsyApiClient] Error searching category {category}: {ex.Message}");
                     continue;
                 }
             }
 
-            return trendingQueries.Distinct().Take(limit).ToList();
+            var result = trendingQueries.Distinct().Take(limit).ToList();
+            Console.WriteLine($"[EtsyApiClient] Returning {result.Count} trending keywords");
+            return result;
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"[EtsyApiClient] FATAL ERROR in GetTrendingQueriesAsync: {ex.GetType().Name} - {ex.Message}");
             throw new DataSourceException("Failed to get trending queries from Etsy", "EtsyAPI", ex);
         }
     }

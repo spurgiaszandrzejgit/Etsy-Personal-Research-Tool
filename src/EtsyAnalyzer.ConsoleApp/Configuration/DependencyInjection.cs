@@ -48,6 +48,9 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromSeconds(config.TimeoutSeconds);
         });
 
+        // Register EtsyApiClient as scoped service (required for EtsyTrendingKeywordProvider)
+        services.AddScoped(sp => sp.GetRequiredService<EtsyApiClient>());
+
         // Data Source
         services.AddScoped<IDataSource, EtsyDataSource>();
 

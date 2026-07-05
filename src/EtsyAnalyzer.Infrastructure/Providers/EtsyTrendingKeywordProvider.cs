@@ -24,13 +24,24 @@ public class EtsyTrendingKeywordProvider : ITrendingKeywordProvider
     {
         try
         {
+            Console.WriteLine($"[EtsyTrendingKeywordProvider] Fetching top {count} trending keywords from Etsy API...");
             var queries = await _apiClient.GetTrendingQueriesAsync(count);
+
+            if (queries == null || queries.Count == 0)
+            {
+                Console.WriteLine("[EtsyTrendingKeywordProvider] WARNING: API returned empty list, using fallback keywords");
+                return GetDefaultKeywords().Take(count).ToList();
+            }
+
+            Console.WriteLine($"[EtsyTrendingKeywordProvider] Successfully fetched {queries.Count} keywords from Etsy API");
             return queries;
         }
         catch (Exception ex)
         {
             // Fallback to default keywords if API fails
-            Console.WriteLine($"Warning: Failed to get trending keywords from Etsy API: {ex.Message}");
+            Console.WriteLine($"[EtsyTrendingKeywordProvider] ERROR: Failed to get trending keywords from Etsy API");
+            Console.WriteLine($"[EtsyTrendingKeywordProvider] Error: {ex.GetType().Name} - {ex.Message}");
+            Console.WriteLine($"[EtsyTrendingKeywordProvider] Using fallback default keywords");
             return GetDefaultKeywords().Take(count).ToList();
         }
     }
