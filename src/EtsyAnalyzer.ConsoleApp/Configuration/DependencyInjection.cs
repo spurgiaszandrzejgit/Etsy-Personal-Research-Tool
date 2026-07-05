@@ -5,6 +5,7 @@ using EtsyAnalyzer.EtsyApi.Configuration;
 using EtsyAnalyzer.EtsyApi.Services;
 using EtsyAnalyzer.Infrastructure.Persistence;
 using EtsyAnalyzer.Infrastructure.Persistence.Repositories;
+using EtsyAnalyzer.Infrastructure.Providers;
 using EtsyAnalyzer.Infrastructure.Reporting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -59,6 +60,11 @@ public static class DependencyInjection
 
         // Report Generator
         services.AddScoped<IReportGenerator, ExcelReportGenerator>();
+
+        // Trending Keywords
+        services.AddScoped<ITrendingKeywordProvider, MockTrendingKeywordProvider>();
+        services.AddScoped<ITrendingKeywordAnalysisService, TrendingKeywordAnalysisService>();
+        services.AddScoped<ITrendingKeywordReportGenerator, TrendingKeywordReportGenerator>();
 
         // Logging
         services.AddLogging(loggingBuilder =>

@@ -11,17 +11,23 @@ public class ConsoleUI
     private readonly IDataSource _dataSource;
     private readonly IAnalyticsService _analyticsService;
     private readonly IReportGenerator _reportGenerator;
+    private readonly ITrendingKeywordAnalysisService _trendingAnalysisService;
+    private readonly ITrendingKeywordReportGenerator _trendingReportGenerator;
     private readonly IConfiguration _configuration;
 
     public ConsoleUI(
         IDataSource dataSource,
         IAnalyticsService analyticsService,
         IReportGenerator reportGenerator,
+        ITrendingKeywordAnalysisService trendingAnalysisService,
+        ITrendingKeywordReportGenerator trendingReportGenerator,
         IConfiguration configuration)
     {
         _dataSource = dataSource ?? throw new ArgumentNullException(nameof(dataSource));
         _analyticsService = analyticsService ?? throw new ArgumentNullException(nameof(analyticsService));
         _reportGenerator = reportGenerator ?? throw new ArgumentNullException(nameof(reportGenerator));
+        _trendingAnalysisService = trendingAnalysisService ?? throw new ArgumentNullException(nameof(trendingAnalysisService));
+        _trendingReportGenerator = trendingReportGenerator ?? throw new ArgumentNullException(nameof(trendingReportGenerator));
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
     }
 
@@ -37,6 +43,9 @@ public class ConsoleUI
             {
                 case "Analyze New Niche":
                     await AnalyzeNewNicheAsync();
+                    break;
+                case "View Trending Keywords":
+                    await AnalyzeTrendingKeywordsAsync();
                     break;
                 case "View Statistics":
                     ShowStatistics();
@@ -80,6 +89,7 @@ public class ConsoleUI
                 .PageSize(10)
                 .AddChoices(new[] {
                     "Analyze New Niche",
+                    "View Trending Keywords",
                     "View Statistics",
                     "Settings",
                     "Exit"
@@ -268,6 +278,115 @@ public class ConsoleUI
         AnsiConsole.Write(table);
         AnsiConsole.WriteLine();
         AnsiConsole.MarkupLine("[dim]Edit appsettings.json to change settings[/]");
+    }
+
+    private async Task AnalyzeTrendingKeywordsAsync()
+    {
+        AnsiConsole.Clear();
+        AnsiConsole.Write(new Rule("[yellow]Trending Keywords Analysis[/]").LeftJustified());
+        AnsiConsole.WriteLine();
+
+        var choice = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("[green]Choose analysis option:[/]")
+                .AddChoices(new[] {
+                    "Top 10 Trending Keywords",
+                    "Top 20 Trending Keywords",
+                    "Custom Keywords List"
+                }));
+
+        TrendingKeywordSummary? summary = null;
+
+        await AnsiConsole.Status()
+            .StartAsync("[yellow]Analyzing trending keywords...[/]", async ctx =>
+            {
+                if (choice == "Top 10 Trending Keywords")
+                {
+                    summary = await _trendingAnalysisService.AnalyzeTopKeywordsAsync(10);
+                }
+                else if (choice == "Top 20 Trending Keywords")
+                {
+                    summary = await _trendingAnalysisService.AnalyzeTopKeywordsAsync(20);
+                }
+                else
+                {
+                    AnsiConsole.WriteLine();
+                    var keywords = AnsiConsole.Ask<string>("[green]Enter keywords (comma-separated):[/]");
+                    var keywordList = keywords.Split(',').Select(k => k.Trim()).Where(k => !string.IsNullOrEmpty(k)).ToList();
+
+                    if (keywordList.Any())
+                    {
+                        summary = await _trendingAnalysisService.AnalyzeCustomKeywordsAsync(keywordList);
+                    }
+                }
+            });
+
+        if (summary != null)
+        {
+            ShowTrendingKeywordsSummary(summary);
+
+            // Generate report
+            var generateReport = AnsiConsole.Confirm("[green]Generate Excel report?[/]", true);
+            if (generateReport)
+            {
+                var reportPath = await _trendingReportGenerator.GenerateReportAsync(summary);
+                AnsiConsole.MarkupLine($"[green]✓[/] Report saved to: [blue]{reportPath}[/]");
+
+                if (AnsiConsole.Confirm("[green]Open report?[/]", true))
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = reportPath,
+                        UseShellExecute = true
+                    });
+                }
+            }
+        }
+    }
+
+    private void ShowTrendingKeywordsSummary(TrendingKeywordSummary summary)
+    {
+        AnsiConsole.WriteLine();
+        AnsiConsole.Write(new Rule("[green]Analysis Results[/]").LeftJustified());
+        AnsiConsole.WriteLine();
+
+        // Summary table
+        var summaryTable = new Table();
+        summaryTable.AddColumn("Metric");
+        summaryTable.AddColumn("Value");
+        summaryTable.AddRow("Total Keywords", summary.TotalKeywordsAnalyzed.ToString());
+        summaryTable.AddRow("✅ Recommended", $"[green]{summary.RecommendedCount}[/]");
+        summaryTable.AddRow("⚠️ Risky", $"[yellow]{summary.NotRecommendedCount}[/]");
+        if (summary.BestOpportunity != null)
+        {
+            summaryTable.AddRow("🏆 Best Opportunity", $"[bold]{summary.BestOpportunity.Keyword}[/] (Score: {summary.BestOpportunity.NicheScore:F1})");
+        }
+        AnsiConsole.Write(summaryTable);
+
+        // Top results
+        AnsiConsole.WriteLine();
+        var resultsTable = new Table();
+        resultsTable.AddColumn("Keyword");
+        resultsTable.AddColumn("Rec");
+        resultsTable.AddColumn("Score");
+        resultsTable.AddColumn("Competition");
+        resultsTable.AddColumn("Listings");
+        resultsTable.AddColumn("Avg Price");
+
+        foreach (var result in summary.Results.OrderByDescending(r => r.NicheScore).Take(10))
+        {
+            var recColor = result.Recommendation.Contains("✅") ? "green" : "yellow";
+            resultsTable.AddRow(
+                result.Keyword,
+                $"[{recColor}]{result.Recommendation}[/]",
+                result.NicheScore.ToString("F1"),
+                result.CompetitionLevel.ToString(),
+                result.TotalListings.ToString(),
+                $"${result.AveragePrice:F2}"
+            );
+        }
+
+        AnsiConsole.Write(resultsTable);
     }
 
     private void ShowGoodbye()

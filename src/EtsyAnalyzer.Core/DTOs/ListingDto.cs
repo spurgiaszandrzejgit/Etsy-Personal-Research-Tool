@@ -15,4 +15,15 @@ public class ListingDto
     public decimal? Rating { get; set; }
     public int ReviewCount { get; set; }
     public string? ImageUrl { get; set; }
+
+    // Helper property
+    public string CurrencySymbol => CurrencyCode switch
+    {
+        "USD" => "$",
+        "EUR" => "€",
+        "GBP" => "£",
+        "CAD" => "C$",
+        "AUD" => "A$",
+        _ => CurrencyCode
+    };
 }

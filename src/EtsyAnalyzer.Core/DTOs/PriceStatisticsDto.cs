@@ -7,6 +7,7 @@ public class PriceStatisticsDto
     public decimal Min { get; set; }
     public decimal Max { get; set; }
     public string CurrencyCode { get; set; } = "USD";
+    public decimal? StandardDeviation { get; set; }
     public List<PriceRangeDto> PriceRanges { get; set; } = new();
 }
 
