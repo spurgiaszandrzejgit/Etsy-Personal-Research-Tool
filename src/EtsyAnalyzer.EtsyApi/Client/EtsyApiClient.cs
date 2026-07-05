@@ -30,8 +30,13 @@ public class EtsyApiClient
     {
         _httpClient.BaseAddress = new Uri(_configuration.ApiUrl);
         _httpClient.Timeout = TimeSpan.FromSeconds(_configuration.TimeoutSeconds);
-        _httpClient.DefaultRequestHeaders.Add("x-api-key", _configuration.ApiKey);
+
+        // Etsy API v3 requires API key in format: keystring:shared_secret
+        var apiKeyValue = $"{_configuration.ApiKey}:{_configuration.SharedSecret}";
+        _httpClient.DefaultRequestHeaders.Add("x-api-key", apiKeyValue);
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "EtsyAnalyzer/1.0");
+
+        Console.WriteLine($"[DEBUG] Configured HttpClient with combined API Key");
     }
 
     public async Task<EtsySearchResponse<EtsyListingResponse>> SearchListingsAsync(

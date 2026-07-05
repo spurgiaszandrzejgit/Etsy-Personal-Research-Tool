@@ -50,45 +50,56 @@ public class AnalyticsService : IAnalyticsService
         await _unitOfWork.SearchQueries.AddAsync(searchQuery, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        // Track shops already processed in this session to avoid duplicate tracking
+        var processedShopIds = new HashSet<long>();
+
         // Преобразуем DTOs в entities и сохраняем
         foreach (var listingDto in listings)
         {
-            // Проверяем/создаём магазин
-            var existingShop = await _unitOfWork.Shops.GetByShopIdAsync(listingDto.ShopId, cancellationToken);
-            if (existingShop == null)
+            // Проверяем/создаём магазин (только если ещё не обработан в этой сессии)
+            if (!processedShopIds.Contains(listingDto.ShopId))
             {
-                var newShop = new Core.Entities.Shop
+                var existingShop = await _unitOfWork.Shops.GetByShopIdAsync(listingDto.ShopId, cancellationToken);
+                if (existingShop == null)
                 {
-                    ShopId = listingDto.ShopId,
-                    ShopName = listingDto.ShopName,
-                    Url = $"https://www.etsy.com/shop/{listingDto.ShopName}",
-                    ListingCount = 0,
-                    CreatedAt = DateTime.UtcNow
-                };
-                await _unitOfWork.Shops.AddAsync(newShop, cancellationToken);
+                    var newShop = new Core.Entities.Shop
+                    {
+                        ShopId = listingDto.ShopId,
+                        ShopName = listingDto.ShopName,
+                        Url = $"https://www.etsy.com/shop/{listingDto.ShopName}",
+                        ListingCount = 0,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    await _unitOfWork.Shops.AddAsync(newShop, cancellationToken);
+                }
+                processedShopIds.Add(listingDto.ShopId);
             }
 
-            // Создаём listing
-            var listing = new Core.Entities.Listing
+            // Создаём listing (только если не существует)
+            var existingListing = await _unitOfWork.Listings.GetByListingIdAsync(listingDto.ListingId, cancellationToken);
+            if (existingListing == null)
             {
-                ListingId = listingDto.ListingId,
-                Title = listingDto.Title,
-                Price = listingDto.Price,
-                CurrencyCode = listingDto.CurrencyCode,
-                Description = listingDto.Description,
-                CategoryPath = listingDto.CategoryPath,
-                Tags = string.Join(", ", listingDto.Tags),
-                Url = listingDto.Url,
-                ShopId = listingDto.ShopId,
-                ShopName = listingDto.ShopName,
-                Rating = listingDto.Rating,
-                ReviewCount = listingDto.ReviewCount,
-                ImageUrl = listingDto.ImageUrl,
-                CreatedAt = DateTime.UtcNow,
-                SearchQueryId = searchQuery.Id
-            };
+                var listing = new Core.Entities.Listing
+                {
+                    ListingId = listingDto.ListingId,
+                    Title = listingDto.Title,
+                    Price = listingDto.Price,
+                    CurrencyCode = listingDto.CurrencyCode,
+                    Description = listingDto.Description,
+                    CategoryPath = listingDto.CategoryPath,
+                    Tags = string.Join(", ", listingDto.Tags),
+                    Url = listingDto.Url,
+                    ShopId = listingDto.ShopId,
+                    ShopName = listingDto.ShopName,
+                    Rating = listingDto.Rating,
+                    ReviewCount = listingDto.ReviewCount,
+                    ImageUrl = listingDto.ImageUrl,
+                    CreatedAt = DateTime.UtcNow,
+                    SearchQueryId = searchQuery.Id
+                };
 
-            await _unitOfWork.Listings.AddAsync(listing, cancellationToken);
+                await _unitOfWork.Listings.AddAsync(listing, cancellationToken);
+            }
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);

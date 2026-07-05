@@ -44,8 +44,12 @@ public class TrendingKeywordAnalysisService : ITrendingKeywordAnalysisService
         {
             try
             {
+                Console.WriteLine($"[TrendingAnalysis] Analyzing keyword: '{keyword}'...");
+
                 // Analyze the keyword
                 var analysis = await _analyticsService.AnalyzeNicheAsync(keyword);
+
+                Console.WriteLine($"[TrendingAnalysis] Keyword '{keyword}' analyzed successfully. Listings: {analysis.TotalListings}");
 
                 // Convert to TrendingKeywordResult
                 var result = ConvertToTrendingResult(keyword, analysis);
@@ -54,9 +58,24 @@ public class TrendingKeywordAnalysisService : ITrendingKeywordAnalysisService
             catch (Exception ex)
             {
                 // Log error but continue with other keywords
-                Console.WriteLine($"Error analyzing '{keyword}': {ex.Message}");
+                Console.WriteLine($"[TrendingAnalysis] ERROR analyzing '{keyword}': {ex.GetType().Name} - {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"[TrendingAnalysis] Inner exception: {ex.InnerException.Message}");
+                }
             }
         }
+
+        // Categorize results into best opportunities and risky niches
+        summary.BestOpportunities = summary.Results
+            .Where(r => r.Recommendation == "✅ Recommended")
+            .OrderByDescending(r => r.NicheScore)
+            .ToList();
+
+        summary.HighRiskNiches = summary.Results
+            .Where(r => r.Recommendation == "⚠️ High Risk")
+            .OrderByDescending(r => r.NicheScore)
+            .ToList();
 
         return summary;
     }

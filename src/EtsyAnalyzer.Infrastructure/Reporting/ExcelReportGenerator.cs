@@ -2,6 +2,7 @@ using ClosedXML.Excel;
 using EtsyAnalyzer.Core.DTOs;
 using EtsyAnalyzer.Core.Interfaces;
 using EtsyAnalyzer.Infrastructure.Reporting.Formatters;
+using EtsyAnalyzer.Infrastructure.Reporting.Builders;
 
 namespace EtsyAnalyzer.Infrastructure.Reporting;
 
@@ -11,6 +12,7 @@ public class ExcelReportGenerator : IReportGenerator
     private readonly ListingsSheetFormatter _listingsFormatter;
     private readonly ShopsSheetFormatter _shopsFormatter;
     private readonly KeywordsSheetFormatter _keywordsFormatter;
+    private readonly ActionPlanWorksheetBuilder _actionPlanBuilder;
 
     public ExcelReportGenerator()
     {
@@ -18,6 +20,7 @@ public class ExcelReportGenerator : IReportGenerator
         _listingsFormatter = new ListingsSheetFormatter();
         _shopsFormatter = new ShopsSheetFormatter();
         _keywordsFormatter = new KeywordsSheetFormatter();
+        _actionPlanBuilder = new ActionPlanWorksheetBuilder();
     }
 
     public string ReportType => "Excel";
@@ -47,6 +50,9 @@ public class ExcelReportGenerator : IReportGenerator
             // 4. Keywords Sheet
             var keywordsSheet = workbook.Worksheets.Add("Keywords");
             _keywordsFormatter.FormatSheet(keywordsSheet, summary);
+
+            // 5. Action Plan Sheet (NEW!)
+            _actionPlanBuilder.Build(workbook, summary);
 
             // Ensure directory exists
             var directory = Path.GetDirectoryName(outputPath);

@@ -32,6 +32,10 @@ public static class DependencyInjection
         services.AddDbContext<EtsyAnalyzerDbContext>(options =>
             options.UseSqlite(connectionString));
 
+        // Etsy API Configuration
+        services.Configure<EtsyApiConfiguration>(
+            configuration.GetSection(EtsyApiConfiguration.SectionName));
+
         // Repositories & Unit of Work
         services.AddScoped<IListingRepository, ListingRepository>();
         services.AddScoped<IShopRepository, ShopRepository>();
@@ -48,8 +52,7 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromSeconds(config.TimeoutSeconds);
         });
 
-        // Register EtsyApiClient as scoped service (required for EtsyTrendingKeywordProvider)
-        services.AddScoped(sp => sp.GetRequiredService<EtsyApiClient>());
+        // EtsyApiClient is automatically registered as scoped by AddHttpClient above
 
         // Data Source
         services.AddScoped<IDataSource, EtsyDataSource>();

@@ -33,11 +33,15 @@ public class ConsoleUI
 
     public async Task RunAsync()
     {
+        Console.WriteLine("DEBUG: RunAsync started");
         ShowWelcome();
+        Console.WriteLine("DEBUG: Welcome shown");
 
         while (true)
         {
+            Console.WriteLine("DEBUG: About to show menu");
             var choice = ShowMainMenu();
+            Console.WriteLine($"DEBUG: User selected: {choice}");
 
             switch (choice)
             {
@@ -83,17 +87,28 @@ public class ConsoleUI
 
     private string ShowMainMenu()
     {
-        return AnsiConsole.Prompt(
-            new SelectionPrompt<string>()
-                .Title("[green]What would you like to do?[/]")
-                .PageSize(10)
-                .AddChoices(new[] {
-                    "Analyze New Niche",
-                    "View Trending Keywords",
-                    "View Statistics",
-                    "Settings",
-                    "Exit"
-                }));
+        Console.WriteLine("DEBUG: Entering ShowMainMenu");
+        try
+        {
+            var result = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("[green]What would you like to do?[/]")
+                    .PageSize(10)
+                    .AddChoices(new[] {
+                        "Analyze New Niche",
+                        "View Trending Keywords",
+                        "View Statistics",
+                        "Settings",
+                        "Exit"
+                    }));
+            Console.WriteLine($"DEBUG: Menu returned: {result}");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"DEBUG: Menu exception: {ex.Message}");
+            throw;
+        }
     }
 
     private async Task AnalyzeNewNicheAsync()
