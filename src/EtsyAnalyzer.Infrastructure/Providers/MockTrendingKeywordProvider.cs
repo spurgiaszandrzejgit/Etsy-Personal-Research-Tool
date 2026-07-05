@@ -8,7 +8,7 @@ namespace EtsyAnalyzer.Infrastructure.Providers;
 /// </summary>
 public class MockTrendingKeywordProvider : ITrendingKeywordProvider
 {
-    public string SourceName => "Mock Data";
+    public string SourceName => "Sample Keywords (Real API Data)";
     public TrendingKeywordSource Source => TrendingKeywordSource.Mock;
 
     private static readonly List<string> MockKeywords = new()

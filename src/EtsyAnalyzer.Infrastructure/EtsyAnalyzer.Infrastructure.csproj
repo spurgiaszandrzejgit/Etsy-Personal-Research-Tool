@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\EtsyAnalyzer.Core\EtsyAnalyzer.Core.csproj" />
+    <ProjectReference Include="..\EtsyAnalyzer.EtsyApi\EtsyAnalyzer.EtsyApi.csproj" />
   </ItemGroup>
 
   <ItemGroup>

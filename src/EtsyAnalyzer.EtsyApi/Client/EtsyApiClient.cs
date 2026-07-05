@@ -113,4 +113,58 @@ public class EtsyApiClient
             throw new DataSourceException("Failed to parse Etsy API response", "EtsyAPI", ex);
         }
     }
+
+    /// <summary>
+    /// Получить трендовые поисковые запросы из Etsy
+    /// Note: Etsy API v3 может не иметь прямого endpoint для trending queries.
+    /// Как альтернатива, можно получить популярные запросы через taxonomy или использовать автодополнение.
+    /// </summary>
+    public async Task<List<string>> GetTrendingQueriesAsync(int limit = 20, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Базовые популярные категории Etsy для получения трендовых запросов
+            var popularCategories = new List<string>
+            {
+                "jewelry", "home decor", "art", "clothing", "accessories",
+                "wedding", "craft supplies", "vintage", "gifts", "personalized"
+            };
+
+            var trendingQueries = new List<string>();
+
+            // Для каждой категории получаем топ листинги и извлекаем популярные теги
+            foreach (var category in popularCategories.Take(5))
+            {
+                try
+                {
+                    var response = await SearchListingsAsync(category, 20, cancellationToken);
+
+                    // Извлекаем популярные теги из листингов
+                    var tags = response.Results
+                        .SelectMany(l => l.Tags ?? new List<string>())
+                        .GroupBy(t => t.ToLower())
+                        .OrderByDescending(g => g.Count())
+                        .Take(3)
+                        .Select(g => g.Key)
+                        .Where(t => t.Length > 3 && !trendingQueries.Contains(t));
+
+                    trendingQueries.AddRange(tags);
+
+                    if (trendingQueries.Count >= limit)
+                        break;
+                }
+                catch
+                {
+                    // Пропускаем ошибки для отдельных категорий
+                    continue;
+                }
+            }
+
+            return trendingQueries.Distinct().Take(limit).ToList();
+        }
+        catch (Exception ex)
+        {
+            throw new DataSourceException("Failed to get trending queries from Etsy", "EtsyAPI", ex);
+        }
+    }
 }

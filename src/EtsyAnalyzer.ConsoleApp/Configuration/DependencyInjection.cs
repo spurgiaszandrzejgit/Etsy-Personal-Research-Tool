@@ -61,8 +61,18 @@ public static class DependencyInjection
         // Report Generator
         services.AddScoped<IReportGenerator, ExcelReportGenerator>();
 
-        // Trending Keywords
-        services.AddScoped<ITrendingKeywordProvider, MockTrendingKeywordProvider>();
+        // Trending Keywords - выбор провайдера на основе конфигурации
+        var useRealProvider = configuration.GetValue<bool>("TrendingKeywords:UseRealEtsyProvider", false);
+
+        if (useRealProvider)
+        {
+            services.AddScoped<ITrendingKeywordProvider, EtsyTrendingKeywordProvider>();
+        }
+        else
+        {
+            services.AddScoped<ITrendingKeywordProvider, MockTrendingKeywordProvider>();
+        }
+
         services.AddScoped<ITrendingKeywordAnalysisService, TrendingKeywordAnalysisService>();
         services.AddScoped<ITrendingKeywordReportGenerator, TrendingKeywordReportGenerator>();
 

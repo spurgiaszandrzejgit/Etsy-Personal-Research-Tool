@@ -58,8 +58,15 @@ public class TrendingKeywordReportGenerator : ITrendingKeywordReportGenerator
         CellFormatter.FormatAsLabel(ws.Cell(row, 1));
         row++;
 
-        ws.Cell(row, 1).Value = "Source:";
+        ws.Cell(row, 1).Value = "Keyword Source:";
         ws.Cell(row, 2).Value = summary.Source.ToString();
+        CellFormatter.FormatAsLabel(ws.Cell(row, 1));
+        row++;
+
+        ws.Cell(row, 1).Value = "Data Source:";
+        ws.Cell(row, 2).Value = "Real Etsy API";
+        ws.Cell(row, 2).Style.Fill.BackgroundColor = ReportColors.Success;
+        ws.Cell(row, 2).Style.Font.Bold = true;
         CellFormatter.FormatAsLabel(ws.Cell(row, 1));
         row++;
 

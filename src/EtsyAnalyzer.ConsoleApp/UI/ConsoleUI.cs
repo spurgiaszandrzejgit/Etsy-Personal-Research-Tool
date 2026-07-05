@@ -350,6 +350,9 @@ public class ConsoleUI
         AnsiConsole.Write(new Rule("[green]Analysis Results[/]").LeftJustified());
         AnsiConsole.WriteLine();
 
+        AnsiConsole.MarkupLine("[dim]ℹ️ Keywords from sample list, data from Real Etsy API[/]");
+        AnsiConsole.WriteLine();
+
         // Summary table
         var summaryTable = new Table();
         summaryTable.AddColumn("Metric");
